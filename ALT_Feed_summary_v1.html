@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALT Feed Summary Report — dPCR Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f8f9fb;
+    --border: #d0d5dd;
+    --text: #1a202c;
+    --text-muted: #6b7280;
+    --accent: #1e40af;
+    --green: #166534;
+    --red: #991b1b;
+
+    /* GraphPad palette */
+    --c1: #1f4e9a;
+    --c2: #c0392b;
+    --c3: #27ae60;
+    --c4: #8e44ad;
+    --c5: #d35400;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #eef1f5;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    background: linear-gradient(135deg, #0f2d6b 0%, #1e56a0 60%, #2874c9 100%);
+    color: #fff;
+    padding: 28px 36px 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .page-header .logo {
+    width: 46px; height: 46px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .page-header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
+  .page-header .sub { font-size: 12px; opacity: 0.78; margin-top: 3px; }
+
+  /* ── Section labels ── */
+  .section-wrap { padding: 26px 28px 10px; }
+  .section-label {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-label .badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    letter-spacing: 0.5px;
+  }
+  .section-label h2 { font-size: 15px; font-weight: 700; color: var(--text); }
+  .section-label .desc { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  /* ── Card grid ── */
+  .card-grid {
+    display: grid;
+    gap: 18px;
+  }
+  .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid-1 { grid-template-columns: 1fr; }
+
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 18px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid;
+  }
+  .card-title.blue  { border-color: var(--c1); color: var(--c1); }
+  .card-title.red   { border-color: var(--c2); color: var(--c2); }
+  .card-title.green { border-color: var(--c3); color: var(--c3); }
+  .card-title.purple{ border-color: var(--c4); color: var(--c4); }
+  .card-title.combined { border-color: #555; color: #333; }
+
+  .canvas-wrap { position: relative; }
+  .canvas-wrap canvas { display: block; }
+
+  /* ── Stats table under curve ── */
+  .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+  .stat-table th {
+    background: #f0f4ff;
+    color: var(--accent);
+    font-weight: 700;
+    padding: 5px 8px;
+    border: 1px solid #dde4f0;
+    text-align: center;
+  }
+  .stat-table td {
+    padding: 4px 8px;
+    border: 1px solid #e8edf5;
+    text-align: center;
+    color: var(--text);
+  }
+  .stat-table tr:nth-child(even) td { background: #f8faff; }
+
+  /* ── R² badge ── */
+  .r2-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 8px;
+  }
+
+  /* ── Bar chart value labels ── */
+  .bar-note { font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+
+  /* ── Comparison table ── */
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cmp-table th {
+    background: #1e3a6b;
+    color: #fff;
+    padding: 8px 10px;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid #2a4a80;
+  }
+  .cmp-table td {
+    padding: 6px 10px;
+    border: 1px solid #dde4f0;
+    text-align: center;
+  }
+  .cmp-table tr:nth-child(even) td { background: #f4f7ff; }
+  .cmp-table tr:hover td { background: #eaf0ff; }
+  .diff-low  { color: #166534; font-weight: 700; }
+  .diff-mid  { color: #92400e; font-weight: 700; }
+  .diff-high { color: #991b1b; font-weight: 700; }
+
+  .footer {
+    text-align: center;
+    padding: 18px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+    background: #fff;
+  }
+
+  @media (max-width: 1100px) {
+    .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .card-grid-4, .card-grid-3, .card-grid-2 { grid-template-columns: 1fr; }
+    .page-header { padding: 18px 16px; }
+    .section-wrap { padding: 16px 12px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ PAGE HEADER ══════════════ -->
+<div class="page-header">
+  <div class="logo">🧬</div>
+  <div>
+    <h1>ALT Feed — dPCR Analysis Report</h1>
+    <div class="sub">Standard Curve of Alterion (137 bp) &nbsp;|&nbsp; Feed Additive Products P1–P9 &nbsp;|&nbsp; 17 April 2026</div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 01: Standard Curves ══════════════ -->
+<div class="section-wrap">
+  <div class="section-label">
+    <span class="badge">01</span>
+    <div>
+      <h2>Standard Curves — Individual</h2>
+      <div class="desc">Log CFU vs. Log Copy Number per g sample &nbsp;|&nbsp; Replicate R1 &amp; R2 with linear regression (GraphPad-style)</div>
+    </div>
+  </div>
+
+  <div class="card-grid card-grid-2" style="grid-template-columns:repeat(2,1fr)">
+
+    <!-- STD A: Control bacteria (Tiangen) -->
+    <div class="card">
+      <div class="card-title blue">STD A — Control Bacteria Standard (Tiangen Kit)</div>
+      <div class="canvas-wrap"><canvas id="stdA" height="220"></canvas></div>
+      <div id="r2A" class="r2-badge"></div>
+      <table class="stat-table" style="margin-top:10px">
+        <thead><tr><th>No.</th><th>log CFU</th><th>R1 cpxconc.</th><th>R2 cpxconc.</th><th>Mean cp/g</th><th>log cp/g</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>1.9</td><td>17.75</td><td>5.23</td><td>11.49</td><td>1.060</td></tr>
+          <tr><td>2</td><td>3.78</td><td>93.73</td><td>84.42</td><td>89.07</td><td>1.950</td></tr>
+          <tr><td>3</td><td>5.91</td><td>3479.39</td><td>3475.69</td><td>3477.54</td><td>3.541</td></tr>
+          <tr><td>4</td><td>7.73</td><td>596109.03</td><td>644892.82</td><td>620500.92</td><td>5.793</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STD B: Feed+ALT Standard (Tiangen) -->
+    <div class="card">
+      <div class="card-title red">STD B — Feed + ALT Standard (Tiangen Kit)</div>
+      <div class="canvas-wrap"><canvas id="stdB" height="220"></canvas></div>
+      <div id="r2B" class="r2-badge"></div>
+      <table class="stat-table" style="margin-top:10px">
+        <thead><tr><th>No.</th><th>log CFU</th><th>R1 cpxconc.</th><th>R2 cpxconc.</th><th>Mean cp/g</th><th>log cp/g</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>3.775</td><td>105.43</td><td>40.97</td><td>73.20</td><td>1.864</td></tr>
+          <tr><td>3</td><td>5.906</td><td>1760.98</td><td>1826.97</td><td>1793.97</td><td>3.254</td></tr>
+          <tr><td>4</td><td>7.728</td><td>92294.23</td><td>101210.15</td><td>96752.19</td><td>4.986</td></tr>
+          <tr><td>5</td><td>9.656</td><td>443044.15</td><td>459183.14</td><td>451113.65</td><td>5.654</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STD C: Control bacteria (Qiagen) -->
+    <div class="card">
+      <div class="card-title green">STD C — Control Bacteria Standard (Qiagen Kit)</div>
+      <div class="canvas-wrap"><canvas id="stdC" height="220"></canvas></div>
+      <div id="r2C" class="r2-badge"></div>
+      <table class="stat-table" style="margin-top:10px">
+        <thead><tr><th>No.</th><th>log CFU</th><th>R1 cp</th><th>R2 cp</th><th>Mean cp</th><th>log(cp)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>3.775</td><td>8.49</td><td>9.02</td><td>8.755</td><td>0.942</td></tr>
+          <tr><td>2</td><td>5.906</td><td>63.51</td><td>59.65</td><td>61.58</td><td>1.789</td></tr>
+          <tr><td>3</td><td>7.728</td><td>472.6</td><td>400.1</td><td>436.35</td><td>2.638</td></tr>
+          <tr><td>4</td><td>9.656</td><td>5026.2</td><td>5010.7</td><td>5018.45</td><td>3.701</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STD Combined -->
+    <div class="card">
+      <div class="card-title combined">All STDs Combined — Overlay</div>
+      <div class="canvas-wrap"><canvas id="stdCombined" height="220"></canvas></div>
+      <div style="margin-top:10px;font-size:11px;color:#555;">
+        Comparison of all three standard curves plotted on the same axes.<br>
+        Each point = mean log(copy number) per g sample vs. log CFU.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 02: Bar Graph ══════════════ -->
+<div class="section-wrap" style="margin-top:10px">
+  <div class="section-label">
+    <span class="badge">02</span>
+    <div>
+      <h2>Bar Graph — ALT Quantity in Feed Samples</h2>
+      <div class="desc">Log CFU per 1 g sample &nbsp;(Feed+ALT Standard, Tiangen Kit) &nbsp;|&nbsp; P1–P9+Boil</div>
+    </div>
+  </div>
+
+  <div class="card-grid card-grid-1">
+    <div class="card">
+      <div class="card-title blue">Log CFU / g Sample — Feed Additive Products (Feed+ALT Std, Tiangen)</div>
+      <div class="canvas-wrap"><canvas id="barChart" height="200"></canvas></div>
+      <p class="bar-note">Error bars = ± SD of duplicate copy number measurements. Neg = negative control (no DNA).</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 03: STD Comparison ══════════════ -->
+<div class="section-wrap" style="margin-top:10px">
+  <div class="section-label">
+    <span class="badge">03</span>
+    <div>
+      <h2>STD Comparison — % Difference of Log CFU/g per Sample</h2>
+      <div class="desc">Comparing STD A (Tiangen-Control), STD B (Feed+ALT-Tiangen), STD C (Qiagen-Control) column: Log CFU per 1 g sample</div>
+    </div>
+  </div>
+
+  <div class="card-grid card-grid-1">
+    <div class="card">
+      <div class="card-title combined">Pairwise % Difference Between STD A / B / C — Log CFU per 1 g Sample</div>
+
+      <!-- Bar chart showing 3 STDs side by side per sample -->
+      <div class="canvas-wrap" style="margin-bottom:16px"><canvas id="cmpBar" height="200"></canvas></div>
+
+      <!-- Detail table -->
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Sample</th>
+            <th colspan="3">Log CFU / g Sample</th>
+            <th colspan="3">% Difference</th>
+          </tr>
+          <tr>
+            <th>STD A<br><small>(Tiangen-Ctrl)</small></th>
+            <th>STD B<br><small>(Feed+ALT)</small></th>
+            <th>STD C<br><small>(Qiagen-Ctrl)</small></th>
+            <th>A vs B</th>
+            <th>A vs C</th>
+            <th>B vs C</th>
+          </tr>
+        </thead>
+        <tbody id="cmpBody"></tbody>
+      </table>
+      <p style="font-size:11px;color:#888;margin-top:8px;">
+        % Difference = |A − B| / ((A+B)/2) × 100 &nbsp;(Relative % difference between pairs)
+        &nbsp;|&nbsp; <span class="diff-low">■ &lt;10%</span> &nbsp;<span class="diff-mid">■ 10–30%</span> &nbsp;<span class="diff-high">■ &gt;30%</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  ALT Feed Summary Report v1 &nbsp;|&nbsp; Standard Curve of Alterion (137 bp) by dPCR &nbsp;|&nbsp; Generated 17 April 2026
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════ */
+
+// STD A: Control Bacteria (Tiangen)
+const stdA = {
+  logCFU: [1.9,    3.78,   5.91,   7.73],
+  r1:     [1.248,  1.972,  3.541,  5.775],   // log10(cpxconc)
+  r2:     [0.719,  1.926,  3.541,  5.810],
+  mean:   [1.060,  1.950,  3.541,  5.793],
+};
+
+// STD B: Feed+ALT (Tiangen)
+const stdB = {
+  logCFU: [3.775, 5.906, 7.728, 9.656],
+  r1:     [2.023, 3.246, 4.965, 5.646],
+  r2:     [1.612, 3.261, 5.005, 5.662],
+  mean:   [1.864, 3.254, 4.986, 5.654],
+};
+
+// STD C: Control Bacteria (Qiagen)
+const stdC = {
+  logCFU: [3.775, 5.906, 7.728, 9.656],
+  r1:     [0.929, 1.803, 2.674, 3.701],
+  r2:     [0.955, 1.776, 2.602, 3.700],
+  mean:   [0.942, 1.789, 2.638, 3.701],
+};
+
+// Bar chart: Feed+ALT Std (Tiangen) – Log CFU per 1 g sample
+const feedSamples = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P9+Boil','Neg'];
+const feedLogCFU  = [2.4105, 2.0656, 1.6721, 2.4100, 2.0495, 2.7918, 1.2280, 3.6086, 8.9675, 7.9178, 0];
+const feedSD      = [0.0040, 0.2384, 0.2231, 0.0889, 0.3307, 0.0855, 0.0040, 0.0068, 0.0260, 0.0177, 0];
+
+// STD comparison – Log CFU per 1 g sample
+// A=Tiangen-Ctrl, B=Feed+ALT Tiangen, C=Qiagen-Ctrl
+const cmpSamples = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P9+Boil','Neg'];
+const cmpA = [2.5755, 0.9047, 0.4958, 1.1422, 0.5986, 1.2375, -0.0757, 1.9196, 6.5554, 5.7185, 0];
+const cmpB = [2.4105, 2.0656, 1.6721, 2.4100, 2.0495, 2.7918,  1.2280, 3.6086, 8.9675, 7.9178, 0];
+const cmpC = [3.6683, 3.3699, 3.1072, 3.6384, 3.4517, 3.9898,  2.8457, 4.5885, 8.4657, 7.6834, 0];
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function linReg(x, y) {
+  const n = x.length;
+  const sx = x.reduce((a,b)=>a+b,0), sy = y.reduce((a,b)=>a+b,0);
+  const sxy = x.reduce((s,xi,i)=>s+xi*y[i],0);
+  const sxx = x.reduce((s,xi)=>s+xi*xi,0);
+  const m = (n*sxy - sx*sy) / (n*sxx - sx*sx);
+  const b = (sy - m*sx) / n;
+  const yMean = sy/n;
+  const ssTot = y.reduce((s,yi)=>s+(yi-yMean)**2,0);
+  const ssRes = y.reduce((s,yi,i)=>s+(yi-(m*x[i]+b))**2,0);
+  const r2 = 1 - ssRes/ssTot;
+  return {m, b, r2};
+}
+
+function trendLine(x, reg) {
+  const mn = Math.min(...x), mx = Math.max(...x);
+  const pts = [];
+  for (let t=mn; t<=mx+0.01; t+=(mx-mn)/50) pts.push({x:t, y:reg.m*t+reg.b});
+  return pts;
+}
+
+const gpFont = { family:'Arial', size:11 };
+
+function stdCurveOptions(xLabel='log CFU', yLabel='log(Copy Number / g)') {
+  return {
+    responsive: true,
+    plugins: {
+      legend: { position:'top', labels:{ font:gpFont, boxWidth:12, padding:8 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.dataset.label}: (${ctx.parsed.x.toFixed(3)}, ${ctx.parsed.y.toFixed(3)})`
+        }
+      }
+    },
+    scales: {
+      x: { type:'linear', title:{ display:true, text:xLabel, font:{...gpFont,weight:'bold'} },
+           grid:{ color:'#e0e6f0' }, ticks:{ font:gpFont } },
+      y: { title:{ display:true, text:yLabel, font:{...gpFont,weight:'bold'} },
+           grid:{ color:'#e0e6f0' }, ticks:{ font:gpFont } }
+    }
+  };
+}
+
+function makeScatter(ctxId, std, color, r2ElId, label, r1label='R1', r2label='R2') {
+  const reg = linReg(std.logCFU, std.mean);
+  const trend = trendLine(std.logCFU, reg);
+
+  const el = document.getElementById(r2ElId);
+  el.innerHTML = `<span>R² = ${reg.r2.toFixed(4)}</span><span style="margin-left:8px;font-weight:normal;color:#374151;">y = ${reg.m.toFixed(4)}x ${reg.b>=0?'+':''} ${reg.b.toFixed(4)}</span>`;
+
+  const r1pts = std.logCFU.map((x,i)=>({x, y:std.r1[i]}));
+  const r2pts = std.logCFU.map((x,i)=>({x, y:std.r2[i]}));
+  const mnpts = std.logCFU.map((x,i)=>({x, y:std.mean[i]}));
+
+  new Chart(document.getElementById(ctxId), {
+    data: {
+      datasets: [
+        {
+          type:'scatter', label:r1label,
+          data: r1pts,
+          backgroundColor: color+'99', borderColor: color,
+          pointStyle:'circle', pointRadius:5, pointHoverRadius:7
+        },
+        {
+          type:'scatter', label:r2label,
+          data: r2pts,
+          backgroundColor: color+'44', borderColor: color,
+          pointStyle:'triangle', pointRadius:5, pointHoverRadius:7
+        },
+        {
+          type:'scatter', label:'Mean',
+          data: mnpts,
+          backgroundColor: color, borderColor: '#000',
+          pointStyle:'rectRot', pointRadius:6, pointHoverRadius:8,
+          borderWidth:1.5
+        },
+        {
+          type:'line', label:`Regression (R²=${reg.r2.toFixed(4)})`,
+          data: trend,
+          borderColor: color, backgroundColor:'transparent',
+          borderWidth:2, borderDash:[5,3],
+          pointRadius:0, tension:0
+        }
+      ]
+    },
+    options: stdCurveOptions()
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER STD CURVES
+═══════════════════════════════════════════════ */
+makeScatter('stdA', stdA, '#1f4e9a', 'r2A', 'STD A');
+makeScatter('stdB', stdB, '#c0392b', 'r2B', 'STD B');
+makeScatter('stdC', stdC, '#27ae60', 'r2C', 'STD C');
+
+/* ── Combined overlay ── */
+(function(){
+  const regA = linReg(stdA.logCFU, stdA.mean);
+  const regB = linReg(stdB.logCFU, stdB.mean);
+  const regC = linReg(stdC.logCFU, stdC.mean);
+
+  new Chart(document.getElementById('stdCombined'), {
+    data: {
+      datasets: [
+        { type:'scatter', label:'STD A (Tiangen-Ctrl) Mean',
+          data: stdA.logCFU.map((x,i)=>({x, y:stdA.mean[i]})),
+          backgroundColor:'#1f4e9a', borderColor:'#1f4e9a', pointRadius:6 },
+        { type:'line', label:'STD A Regression',
+          data: trendLine(stdA.logCFU, regA),
+          borderColor:'#1f4e9a', backgroundColor:'transparent',
+          borderWidth:2, borderDash:[5,3], pointRadius:0 },
+
+        { type:'scatter', label:'STD B (Feed+ALT) Mean',
+          data: stdB.logCFU.map((x,i)=>({x, y:stdB.mean[i]})),
+          backgroundColor:'#c0392b', borderColor:'#c0392b', pointRadius:6, pointStyle:'triangle' },
+        { type:'line', label:'STD B Regression',
+          data: trendLine(stdB.logCFU, regB),
+          borderColor:'#c0392b', backgroundColor:'transparent',
+          borderWidth:2, borderDash:[5,3], pointRadius:0 },
+
+        { type:'scatter', label:'STD C (Qiagen-Ctrl) Mean',
+          data: stdC.logCFU.map((x,i)=>({x, y:stdC.mean[i]})),
+          backgroundColor:'#27ae60', borderColor:'#27ae60', pointRadius:6, pointStyle:'rectRot' },
+        { type:'line', label:'STD C Regression',
+          data: trendLine(stdC.logCFU, regC),
+          borderColor:'#27ae60', backgroundColor:'transparent',
+          borderWidth:2, borderDash:[5,3], pointRadius:0 },
+      ]
+    },
+    options: stdCurveOptions()
+  });
+})();
+
+/* ═══════════════════════════════════════════════
+   RENDER BAR CHART (Section 02)
+═══════════════════════════════════════════════ */
+(function(){
+  const colors = feedLogCFU.map((v,i) => {
+    if (i === feedSamples.indexOf('Neg')) return '#9ca3af';
+    if (i === feedSamples.indexOf('P9+Boil')) return '#f59e0b';
+    if (i === feedSamples.indexOf('P9')) return '#c0392b';
+    // gradient blue
+    const blues = ['#1e3a6e','#1e4d8c','#1e5fa8','#2471c0','#2e82d0','#3a93df','#48a5e8','#5ab5f0','#70c4f4'];
+    return blues[i % blues.length];
+  });
+
+  new Chart(document.getElementById('barChart'), {
+    type:'bar',
+    data:{
+      labels: feedSamples,
+      datasets:[{
+        label:'Log CFU / g sample (Feed+ALT Std, Tiangen)',
+        data: feedLogCFU,
+        backgroundColor: colors,
+        borderColor: colors.map(c=>c),
+        borderWidth:1.2,
+        error: feedSD
+      }]
+    },
+    plugins:[{
+      id:'errorbars',
+      afterDatasetDraw(chart) {
+        const {ctx, data, scales:{x,y}} = chart;
+        data.datasets[0].data.forEach((val, i) => {
+          const sd = feedSD[i];
+          if (!sd) return;
+          const xPos = x.getPixelForValue(i);
+          const yTop = y.getPixelForValue(val+sd);
+          const yBot = y.getPixelForValue(val-sd);
+          ctx.save();
+          ctx.strokeStyle='#333'; ctx.lineWidth=1.5;
+          ctx.beginPath();
+          ctx.moveTo(xPos, yTop); ctx.lineTo(xPos, yBot);
+          ctx.moveTo(xPos-4, yTop); ctx.lineTo(xPos+4, yTop);
+          ctx.moveTo(xPos-4, yBot); ctx.lineTo(xPos+4, yBot);
+          ctx.stroke(); ctx.restore();
+        });
+      }
+    }],
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ labels:{ font:gpFont } },
+        tooltip:{
+          callbacks:{ label: ctx=>`Log CFU/g: ${ctx.parsed.y.toFixed(4)} ± ${feedSD[ctx.dataIndex].toFixed(4)} SD` }
+        }
+      },
+      scales:{
+        x:{ title:{ display:true, text:'Sample', font:{...gpFont,weight:'bold'} }, grid:{display:false}, ticks:{font:gpFont} },
+        y:{ title:{ display:true, text:'Log CFU / g sample', font:{...gpFont,weight:'bold'} },
+            grid:{ color:'#e8edf5' }, ticks:{ font:gpFont }, min:0 }
+      }
+    }
+  });
+})();
+
+/* ═══════════════════════════════════════════════
+   RENDER COMPARISON (Section 03)
+═══════════════════════════════════════════════ */
+(function(){
+  // ── Grouped bar chart ──
+  new Chart(document.getElementById('cmpBar'), {
+    type:'bar',
+    data:{
+      labels: cmpSamples,
+      datasets:[
+        { label:'STD A (Tiangen-Ctrl)', data:cmpA, backgroundColor:'#1f4e9a', borderWidth:1 },
+        { label:'STD B (Feed+ALT)',     data:cmpB, backgroundColor:'#c0392b', borderWidth:1 },
+        { label:'STD C (Qiagen-Ctrl)', data:cmpC, backgroundColor:'#27ae60', borderWidth:1 },
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{ labels:{ font:gpFont } } },
+      scales:{
+        x:{ title:{ display:true, text:'Sample', font:{...gpFont,weight:'bold'} }, grid:{display:false}, ticks:{font:gpFont} },
+        y:{ title:{ display:true, text:'Log CFU / g sample', font:{...gpFont,weight:'bold'} },
+            grid:{ color:'#e8edf5' }, ticks:{ font:gpFont } }
+      }
+    }
+  });
+
+  // ── Comparison table ──
+  function pctDiff(a,b) {
+    const avg = (Math.abs(a)+Math.abs(b))/2;
+    if (avg===0) return '—';
+    return (Math.abs(a-b)/avg*100).toFixed(1)+'%';
+  }
+  function diffClass(val) {
+    if (val==='—') return '';
+    const n = parseFloat(val);
+    if (n<10) return 'diff-low';
+    if (n<30) return 'diff-mid';
+    return 'diff-high';
+  }
+
+  const tbody = document.getElementById('cmpBody');
+  cmpSamples.forEach((s,i)=>{
+    const ab = pctDiff(cmpA[i],cmpB[i]);
+    const ac = pctDiff(cmpA[i],cmpC[i]);
+    const bc = pctDiff(cmpB[i],cmpC[i]);
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><b>${s}</b></td>
+      <td>${cmpA[i].toFixed(4)}</td>
+      <td>${cmpB[i].toFixed(4)}</td>
+      <td>${cmpC[i].toFixed(4)}</td>
+      <td class="${diffClass(ab)}">${ab}</td>
+      <td class="${diffClass(ac)}">${ac}</td>
+      <td class="${diffClass(bc)}">${bc}</td>`;
+    tbody.appendChild(row);
+  });
+})();
+</script>
+</body>
+</html>
