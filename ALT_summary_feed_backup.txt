@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALT Feed — dPCR Analysis Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f3ee; --surface:#fff; --border:#dedad2;
+  --text:#1a1916; --muted:#7a7770;
+  --c1:#1A5FA8; --c2:#C0392B; --c3:#27AE60;
+  --c1a:rgba(26,95,168,0.11); --c2a:rgba(192,57,43,0.11);
+  --c3a:rgba(39,174,96,0.11);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+.page{max-width:1260px;margin:0 auto;padding:40px 32px;}
+.header{border-bottom:2px solid var(--text);padding-bottom:20px;margin-bottom:40px;display:flex;justify-content:space-between;align-items:flex-end;}
+.header h1{font-family:'DM Serif Display',serif;font-size:32px;line-height:1.15;letter-spacing:-0.5px;}
+.header p{color:var(--muted);font-size:13px;margin-top:5px;font-family:'DM Mono',monospace;}
+.header-right{text-align:right;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;}
+.badge{display:inline-block;background:var(--text);color:var(--bg);font-size:10px;font-family:'DM Mono',monospace;padding:3px 10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.sec-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:5px;display:flex;align-items:center;gap:10px;}
+.sec-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:2px;}
+.sec-desc{color:var(--muted);font-size:12px;margin-bottom:20px;}
+section{margin-bottom:52px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px 20px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-1{display:grid;grid-template-columns:1fr;gap:14px;}
+.chart-tag{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.chart-name{font-size:13px;font-weight:500;margin-bottom:12px;}
+.chart-sm{position:relative;height:190px;}
+.chart-md{position:relative;height:240px;}
+.chart-lg{position:relative;height:280px;}
+.eq-box{margin-top:10px;padding:8px 12px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;}
+.bl-1{border-left:3px solid var(--c1);background:var(--c1a);}
+.bl-2{border-left:3px solid var(--c2);background:var(--c2a);}
+.bl-3{border-left:3px solid var(--c3);background:var(--c3a);}
+.bl-all{border-left:3px solid #888;background:rgba(0,0,0,0.04);}
+.eq-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:16px;}
+.eq-table th{background:var(--text);color:var(--bg);padding:9px 14px;text-align:left;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;font-weight:500;}
+.eq-table td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.eq-table tr:last-child td{border-bottom:none;}
+.eq-table tr:hover td{background:var(--bg);}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle;}
+.r2bar{display:inline-block;height:7px;border-radius:2px;vertical-align:middle;margin-right:6px;}
+.note{font-size:11.5px;color:var(--muted);font-style:italic;padding:9px 14px;border-left:2px solid var(--border);margin-bottom:18px;}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:12px;color:var(--muted);}
+.leg{display:flex;align-items:center;gap:6px;}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.cmp-table th{background:var(--text);color:var(--bg);padding:9px 14px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;font-weight:500;}
+.cmp-table td{padding:8px 14px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:hover td{background:var(--bg);}
+.cmp-table td:first-child{text-align:left;font-weight:500;}
+.diff-low{color:#166534;font-weight:600;}
+.diff-mid{color:#92400e;font-weight:600;}
+.diff-high{color:#991b1b;font-weight:600;}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}}
+@media(max-width:580px){.grid-4{grid-template-columns:1fr;}.page{padding:20px 14px;}.header{flex-direction:column;gap:12px;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div>
+    <span class="badge">dPCR · Alterion 137 bp · Feed Additive Products</span>
+    <h1>ALT Feed<br>Analysis Report</h1>
+    <p>ALT (Bacillus subtilis) · Feed Additive Products P1–P9 · 3 Standard Curves</p>
+  </div>
+  <div class="header-right">
+    <div>20260417</div>
+    <div>sheet: ALT-3 Std · ALT-Feed 1 Std</div>
+    <div>3 standard curves · 11 feed samples</div>
+  </div>
+</div>
+
+
+<!-- ── SECTION 01 ── -->
+<section>
+  <div class="sec-title"><span class="sec-num">01</span>Standard curves — individual</div>
+  <p class="sec-desc">Scatter plot ของแต่ละ standard curve พร้อม linear regression line, equation และ R² · แกน Y = log (copy number per g sample)</p>
+
+  <div class="grid-4">
+    <div class="card">
+      <div class="chart-tag" style="color:var(--c1)">STD A</div>
+      <div class="chart-name">Control Bacteria Standard (Tiangen Kit)</div>
+      <div class="chart-sm"><canvas id="scA"></canvas></div>
+      <div class="eq-box bl-1" id="eqA"></div>
+    </div>
+    <div class="card">
+      <div class="chart-tag" style="color:var(--c2)">STD B</div>
+      <div class="chart-name">Feed + ALT Standard (Tiangen Kit)</div>
+      <div class="chart-sm"><canvas id="scB"></canvas></div>
+      <div class="eq-box bl-2" id="eqB"></div>
+    </div>
+    <div class="card">
+      <div class="chart-tag" style="color:var(--c3)">STD C</div>
+      <div class="chart-name">Control Bacteria Standard (Qiagen Kit)</div>
+      <div class="chart-sm"><canvas id="scC"></canvas></div>
+      <div class="eq-box bl-3" id="eqC"></div>
+    </div>
+    <div class="card">
+      <div class="chart-tag" style="color:#555">All STDs</div>
+      <div class="chart-name">Combined — all standards</div>
+      <div class="chart-sm"><canvas id="scAll"></canvas></div>
+      <div class="eq-box bl-all" style="font-size:10px;line-height:1.7;" id="eqAll"></div>
+    </div>
+  </div>
+
+  <table class="eq-table">
+    <thead><tr>
+      <th>Standard curve</th><th>Slope (m)</th><th>Intercept (b)</th>
+      <th>Equation</th><th>R²</th><th>R² bar</th>
+    </tr></thead>
+    <tbody id="eqTbody"></tbody>
+  </table>
+</section>
+
+
+<!-- ── SECTION 02 ── -->
+<section>
+  <div class="sec-title"><span class="sec-num">02</span>ALT quantity in feed samples</div>
+  <p class="sec-desc">Log CFU per 1 g sample ของ Feed Additive Products P1–P9 เปรียบเทียบปริมาณเชื้อ ALT ในแต่ละตัวอย่าง · ข้อมูลจาก Feed+ALT Standard (Tiangen Kit)</p>
+  <p class="note">Error bars = ± SD ของ duplicate copy number · P9 = high positive control · P9+Boil = boiled control · Neg = negative control (no DNA)</p>
+
+  <div class="grid-1">
+    <div class="card">
+      <div class="chart-name">Log CFU / g sample — Feed Additive Products (Feed+ALT Std, Tiangen)</div>
+      <div class="chart-lg"><canvas id="barMain"></canvas></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── SECTION 03 ── -->
+<section>
+  <div class="sec-title"><span class="sec-num">03</span>STD comparison — % difference per sample</div>
+  <p class="sec-desc">เปรียบเทียบ Log CFU per 1 g sample ระหว่าง STD A, B, C แยกตาม sample · แสดง % relative difference ระหว่าง standard curves คู่ต่างๆ</p>
+  <p class="note">% Difference = |A − B| / ((|A|+|B|)/2) × 100 (relative % difference)</p>
+
+  <div class="legend">
+    <span class="leg"><span class="leg-sq" style="background:var(--c1)"></span>STD A — Control Bacteria (Tiangen Kit)</span>
+    <span class="leg"><span class="leg-sq" style="background:var(--c2)"></span>STD B — Feed+ALT (Tiangen Kit)</span>
+    <span class="leg"><span class="leg-sq" style="background:var(--c3)"></span>STD C — Control Bacteria (Qiagen Kit)</span>
+  </div>
+
+  <div class="grid-1" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="chart-name">Log CFU / g sample — STD A vs B vs C per sample</div>
+      <div class="chart-md"><canvas id="cmpBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th rowspan="2" style="text-align:left">Sample</th>
+          <th colspan="3">Log CFU / g Sample</th>
+          <th colspan="3">% Relative Difference</th>
+        </tr>
+        <tr>
+          <th>STD A<br><small style="font-weight:300;opacity:.75">(Tiangen-Ctrl)</small></th>
+          <th>STD B<br><small style="font-weight:300;opacity:.75">(Feed+ALT)</small></th>
+          <th>STD C<br><small style="font-weight:300;opacity:.75">(Qiagen-Ctrl)</small></th>
+          <th>A vs B</th><th>A vs C</th><th>B vs C</th>
+        </tr>
+      </thead>
+      <tbody id="cmpTbody"></tbody>
+    </table>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;padding:0 4px;">
+      <span class="diff-low">■ &lt; 10%</span> &nbsp;
+      <span class="diff-mid">■ 10–30%</span> &nbsp;
+      <span class="diff-high">■ &gt; 30%</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* DATA */
+var stdCurves = [
+  { label:'Control Bacteria (Tiangen)', color:'#1A5FA8',
+    pts:[{x:1.9000,y:1.0603},{x:3.7800,y:1.9498},{x:5.9100,y:3.5413},{x:7.7300,y:5.7927}] },
+  { label:'Feed+ALT Standard (Tiangen)', color:'#C0392B',
+    pts:[{x:3.7752,y:1.8645},{x:5.9063,y:3.2538},{x:7.7284,y:4.9857},{x:9.6561,y:5.6543}] },
+  { label:'Control Bacteria (Qiagen)', color:'#27AE60',
+    pts:[{x:3.7752,y:0.9421},{x:5.9063,y:1.7892},{x:7.7284,y:2.6383},{x:9.6561,y:3.7006}] }
+];
+
+var feedLabels = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P9+Boil','Neg'];
+var feedVals   = [2.4105,2.0656,1.6721,2.4100,2.0495,2.7918,1.2280,3.6086,8.9675,7.9178,0];
+var feedSD     = [0.0040,0.2384,0.2231,0.0889,0.3307,0.0855,0.0040,0.0068,0.0260,0.0177,0];
+
+var cmpLabels = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P9+Boil','Neg'];
+var cmpA = [2.5755,0.9047,0.4958,1.1422,0.5986,1.2375,-0.0757,1.9196,6.5554,5.7185,0];
+var cmpB = [2.4105,2.0656,1.6721,2.4100,2.0495,2.7918,1.2280,3.6086,8.9675,7.9178,0];
+var cmpC = [3.6683,3.3699,3.1072,3.6384,3.4517,3.9898,2.8457,4.5885,8.4657,7.6834,0];
+
+/* HELPERS */
+function linreg(pts){
+  var n=pts.length,sx=0,sy=0,sxx=0,sxy=0;
+  for(var i=0;i<n;i++){sx+=pts[i].x;sy+=pts[i].y;sxx+=pts[i].x*pts[i].x;sxy+=pts[i].x*pts[i].y;}
+  var m=(n*sxy-sx*sy)/(n*sxx-sx*sx),b=(sy-m*sx)/n;
+  var ybar=sy/n,sst=0,ssr=0;
+  for(var i=0;i<n;i++){sst+=Math.pow(pts[i].y-ybar,2);ssr+=Math.pow(pts[i].y-(m*pts[i].x+b),2);}
+  return {m:m,b:b,r2:1-ssr/sst};
+}
+var axCol='#555', gridCol='rgba(0,0,0,0.06)';
+function scXY(xt,yt){
+  return {
+    x:{title:{display:true,text:xt,color:axCol,font:{size:11,family:'DM Mono'}},
+       grid:{color:gridCol},ticks:{color:axCol,font:{size:10}},border:{color:'#333',width:1}},
+    y:{title:{display:true,text:yt,color:axCol,font:{size:11,family:'DM Mono'}},
+       grid:{color:gridCol},ticks:{color:axCol,font:{size:10}},border:{color:'#333',width:1}}
+  };
+}
+
+/* SEC 01 */
+var canIds=['scA','scB','scC'], eqIds=['eqA','eqB','eqC'];
+var markers=['circle','triangle','rect'], dashes=[[],[6,3],[3,3]];
+var regs=[], tbody=document.getElementById('eqTbody');
+
+for(var i=0;i<stdCurves.length;i++){
+  (function(i){
+    var sc=stdCurves[i], reg=linreg(sc.pts); regs.push(reg);
+    var xs=sc.pts.map(function(p){return p.x;});
+    var xmn=Math.min.apply(null,xs)-0.3, xmx=Math.max.apply(null,xs)+0.3;
+    var sign=reg.b>=0?'+':'-', absb=Math.abs(reg.b).toFixed(4);
+    new Chart(document.getElementById(canIds[i]),{
+      type:'scatter',
+      data:{datasets:[
+        {label:sc.label,data:sc.pts,backgroundColor:sc.color,borderColor:sc.color,
+         pointRadius:6,showLine:false,pointStyle:markers[i]},
+        {label:'fit',data:[{x:xmn,y:reg.m*xmn+reg.b},{x:xmx,y:reg.m*xmx+reg.b}],
+         type:'line',borderColor:sc.color,borderWidth:1.5,pointRadius:0,fill:false,borderDash:dashes[i]}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:4},
+        plugins:{legend:{display:false}},scales:scXY('log CFU','log (copy / g sample)')}
+    });
+    document.getElementById(eqIds[i]).innerHTML=
+      'y = '+reg.m.toFixed(4)+'x '+sign+' '+absb+'<br>R² = '+reg.r2.toFixed(4);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="dot" style="background:'+sc.color+'"></span><strong>'+sc.label+'</strong></td>'+
+      '<td style="font-family:\'DM Mono\',monospace">'+reg.m.toFixed(4)+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace">'+(sign==='+'?'':'-')+absb+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace">y = '+reg.m.toFixed(4)+'x '+sign+' '+absb+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-weight:500">'+reg.r2.toFixed(4)+'</td>'+
+      '<td><span class="r2bar" style="width:'+Math.round(reg.r2*100)+'px;background:'+sc.color+'"></span>'+
+      (reg.r2*100).toFixed(1)+'%</td>';
+    tbody.appendChild(tr);
+  })(i);
+}
+
+/* Combined */
+var allDS=[], eqAllHtml='';
+for(var i=0;i<stdCurves.length;i++){
+  var sc=stdCurves[i],reg=regs[i];
+  var xs=sc.pts.map(function(p){return p.x;});
+  var xmn=Math.min.apply(null,xs)-0.2,xmx=Math.max.apply(null,xs)+0.2;
+  allDS.push({label:sc.label,data:sc.pts,backgroundColor:sc.color,borderColor:sc.color,
+    pointStyle:markers[i],pointRadius:7,showLine:false});
+  allDS.push({label:sc.label+' fit',
+    data:[{x:xmn,y:reg.m*xmn+reg.b},{x:xmx,y:reg.m*xmx+reg.b}],
+    type:'line',borderColor:sc.color,borderWidth:1.5,borderDash:dashes[i],pointRadius:0,fill:false});
+  var s=reg.b>=0?'+':'-';
+  eqAllHtml+='<span style="color:'+sc.color+'">STD '+'ABC'[i]+'</span>: y='+
+    reg.m.toFixed(3)+'x'+s+Math.abs(reg.b).toFixed(3)+' R²='+reg.r2.toFixed(3)+'<br>';
+}
+new Chart(document.getElementById('scAll'),{
+  type:'scatter',data:{datasets:allDS},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:4},
+    plugins:{legend:{display:false}},scales:scXY('log CFU','log (copy / g sample)')}
+});
+document.getElementById('eqAll').innerHTML=eqAllHtml;
+
+/* SEC 02 */
+(function(){
+  var barColors=feedLabels.map(function(l){
+    if(l==='Neg') return 'rgba(100,100,100,0.65)';
+    if(l==='P9+Boil') return 'rgba(192,57,43,0.55)';
+    if(l==='P9') return 'rgba(192,57,43,0.85)';
+    return 'rgba(26,95,168,0.72)';
+  });
+  var errPlugin={id:'err',afterDatasetDraw:function(chart){
+    var ctx=chart.ctx,ds=chart.data.datasets[0],meta=chart.getDatasetMeta(0);
+    for(var i=0;i<ds.data.length;i++){
+      var sd=feedSD[i]; if(!sd) continue;
+      var el=meta.data[i],x=el.x;
+      var yT=chart.scales.y.getPixelForValue(ds.data[i]+sd);
+      var yB=chart.scales.y.getPixelForValue(ds.data[i]-sd);
+      ctx.save();ctx.strokeStyle='#444';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(x,yT);ctx.lineTo(x,yB);
+      ctx.moveTo(x-4,yT);ctx.lineTo(x+4,yT);
+      ctx.moveTo(x-4,yB);ctx.lineTo(x+4,yB);
+      ctx.stroke();ctx.restore();
+    }
+  }};
+  new Chart(document.getElementById('barMain'),{
+    type:'bar',plugins:[errPlugin],
+    data:{labels:feedLabels,datasets:[{
+      label:'Log CFU / g sample',data:feedVals,backgroundColor:barColors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:4},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(c){
+          return 'Log CFU/g: '+c.parsed.y.toFixed(4)+' ± '+feedSD[c.dataIndex].toFixed(4)+' SD';
+        }}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:axCol,font:{size:11}},border:{color:'#333'}},
+        y:{title:{display:true,text:'Log CFU per g sample',color:axCol,font:{size:11,family:'DM Mono'}},
+           grid:{color:gridCol},ticks:{color:axCol,font:{size:10}},border:{color:'#333'},min:0}
+      }}
+  });
+})();
+
+/* SEC 03 */
+(function(){
+  new Chart(document.getElementById('cmpBar'),{
+    type:'bar',
+    data:{labels:cmpLabels,datasets:[
+      {label:'STD A (Tiangen-Ctrl)',data:cmpA,backgroundColor:'rgba(26,95,168,0.75)',borderWidth:0},
+      {label:'STD B (Feed+ALT)',    data:cmpB,backgroundColor:'rgba(192,57,43,0.75)',borderWidth:0},
+      {label:'STD C (Qiagen-Ctrl)', data:cmpC,backgroundColor:'rgba(39,174,96,0.75)',borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:4},
+      plugins:{legend:{labels:{font:{size:11,family:'DM Mono'},boxWidth:12,padding:12}},
+        tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:axCol,font:{size:11}},border:{color:'#333'}},
+        y:{title:{display:true,text:'Log CFU per g sample',color:axCol,font:{size:11,family:'DM Mono'}},
+           grid:{color:gridCol},ticks:{color:axCol,font:{size:10}},border:{color:'#333'}}
+      }}
+  });
+
+  function pctDiff(a,b){
+    var avg=(Math.abs(a)+Math.abs(b))/2;
+    if(avg===0) return {v:'—',cls:''};
+    var n=Math.abs(a-b)/avg*100;
+    return {v:n.toFixed(1)+'%',cls:n<10?'diff-low':n<30?'diff-mid':'diff-high'};
+  }
+  var tb=document.getElementById('cmpTbody');
+  for(var i=0;i<cmpLabels.length;i++){
+    var ab=pctDiff(cmpA[i],cmpB[i]),ac=pctDiff(cmpA[i],cmpC[i]),bc=pctDiff(cmpB[i],cmpC[i]);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+cmpLabels[i]+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace">'+cmpA[i].toFixed(4)+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace">'+cmpB[i].toFixed(4)+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace">'+cmpC[i].toFixed(4)+'</td>'+
+      '<td class="'+ab.cls+'" style="font-family:\'DM Mono\',monospace">'+ab.v+'</td>'+
+      '<td class="'+ac.cls+'" style="font-family:\'DM Mono\',monospace">'+ac.v+'</td>'+
+      '<td class="'+bc.cls+'" style="font-family:\'DM Mono\',monospace">'+bc.v+'</td>';
+    tb.appendChild(tr);
+  }
+})();
+</script>
+</body>
+</html>
